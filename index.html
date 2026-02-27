@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SNCF Quiz 🚄</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #c0392b 0%, #1a1a2e 60%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      max-width: 700px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+    }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, #c0392b, #e74c3c);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header .logo { font-size: 48px; margin-bottom: 8px; }
+    .header h1 { font-size: 28px; font-weight: 800; letter-spacing: 1px; }
+    .header p { font-size: 14px; opacity: 0.85; margin-top: 6px; }
+
+    /* PROGRESS */
+    .progress-bar-wrap { background: #f0f0f0; height: 8px; }
+    .progress-bar {
+      height: 8px;
+      background: linear-gradient(90deg, #c0392b, #e74c3c);
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* START SCREEN */
+    .start-screen { padding: 40px; text-align: center; }
+
+    .start-screen .train-anim {
+      font-size: 56px;
+      margin-bottom: 16px;
+      animation: slide 2s infinite alternate ease-in-out;
+    }
+
+    @keyframes slide {
+      from { transform: translateX(-10px); }
+      to   { transform: translateX(10px); }
+    }
+
+    .start-screen h2 { font-size: 24px; font-weight: 800; color: #1a1a2e; margin-bottom: 12px; }
+    .start-screen p  { color: #666; font-size: 15px; margin-bottom: 24px; line-height: 1.6; }
+
+    .name-wrap {
+      margin-bottom: 24px;
+    }
+
+    .name-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    .name-input {
+      width: 100%;
+      padding: 14px 18px;
+      border: 2.5px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      color: #1a1a2e;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .name-input:focus { border-color: #c0392b; }
+    .name-input::placeholder { color: #bbb; }
+
+    .name-error {
+      color: #c0392b;
+      font-size: 13px;
+      margin-top: 6px;
+      text-align: left;
+      display: none;
+    }
+
+    .start-btn {
+      padding: 16px 48px;
+      background: linear-gradient(135deg, #c0392b, #e74c3c);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      width: 100%;
+    }
+
+    .start-btn:hover { opacity: 0.9; }
+
+    /* QUIZ BODY */
+    .quiz-body { padding: 35px 40px 40px; }
+
+    .question-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .question-number {
+      font-size: 13px;
+      font-weight: 600;
+      color: #c0392b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .player-name-tag {
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 4px 14px;
+    }
+
+    .score-badge {
+      background: #fef9f9;
+      border: 2px solid #c0392b;
+      color: #c0392b;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .question-text {
+      font-size: 21px;
+      font-weight: 700;
+      color: #1a1a2e;
+      line-height: 1.4;
+      margin-bottom: 28px;
+    }
+
+    .answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .answer-btn {
+      background: #f8f9fa;
+      border: 2.5px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 16px 18px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #333;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      line-height: 1.3;
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      background: #fef5f5;
+      border-color: #c0392b;
+      color: #c0392b;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(192,57,43,0.15);
+    }
+
+    .answer-btn.correct { background: #e8f8f0; border-color: #27ae60; color: #1e8449; }
+    .answer-btn.wrong   { background: #fdf0f0; border-color: #e74c3c; color: #c0392b; }
+    .answer-btn:disabled { cursor: default; }
+
+    /* FEEDBACK */
+    .feedback {
+      margin-top: 20px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .feedback.correct {
+      background: #e8f8f0;
+      color: #1e8449;
+      border-left: 5px solid #27ae60;
+      display: block;
+    }
+
+    .feedback.wrong {
+      background: #fdf0f0;
+      color: #c0392b;
+      border-left: 5px solid #e74c3c;
+      display: block;
+    }
+
+    /* NEXT BUTTON */
+    .next-btn {
+      display: none;
+      margin-top: 24px;
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #c0392b, #e74c3c);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .next-btn:hover { opacity: 0.9; }
+
+    /* RESULT SCREEN */
+    .result-screen {
+      display: none;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .result-emoji { font-size: 72px; margin-bottom: 16px; }
+
+    .result-screen h2 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+
+    .result-player-name {
+      font-size: 18px;
+      color: #c0392b;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .result-screen .score-display {
+      font-size: 54px;
+      font-weight: 900;
+      color: #c0392b;
+      margin: 16px 0 4px;
+    }
+
+    .result-percent {
+      font-size: 22px;
+      font-weight: 700;
+      color: #888;
+      margin-bottom: 6px;
+    }
+
+    .result-screen p { color: #666; font-size: 15px; margin-bottom: 6px; }
+
+    .result-message {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin: 20px 0 16px;
+      font-size: 16px;
+      font-weight: 600;
+      color: #444;
+    }
+
+    /* Discord status */
+    .discord-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #5865F2;
+      color: white;
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .discord-status.sending { background: #7289da; }
+    .discord-status.success { background: #27ae60; }
+    .discord-status.error   { background: #e74c3c; }
+
+    .restart-btn {
+      padding: 16px 40px;
+      background: linear-gradient(135deg, #c0392b, #e74c3c);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      width: 100%;
+    }
+
+    .restart-btn:hover { opacity: 0.9; }
+
+    @media (max-width: 520px) {
+      .answers { grid-template-columns: 1fr; }
+      .quiz-body { padding: 24px 20px 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">🚄</div>
+    <h1>SNCF Quiz</h1>
+    <p>Test your knowledge about France's national railway!</p>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- START SCREEN -->
+  <div class="start-screen" id="startScreen">
+    <div class="train-anim">🚅</div>
+    <h2>Ready to board?</h2>
+    <p>10 random questions about SNCF — French history, trains, records, and more.<br>Your results will be posted to Discord when you finish!</p>
+
+    <div class="name-wrap">
+      <label class="name-label" for="playerName">👤 Enter your name before starting:</label>
+      <input
+        class="name-input"
+        type="text"
+        id="playerName"
+        placeholder="e.g. Jean-Pierre"
+        maxlength="32"
+        onkeydown="if(event.key==='Enter') startQuiz()"
+      />
+      <div class="name-error" id="nameError">⚠️ Please enter your name to continue.</div>
+    </div>
+
+    <button class="start-btn" onclick="startQuiz()">Start Quiz 🚀</button>
+  </div>
+
+  <!-- QUIZ BODY -->
+  <div class="quiz-body" id="quizBody" style="display:none;">
+    <div class="top-bar">
+      <span class="question-number" id="questionNumber">Question 1 / 10</span>
+      <span class="player-name-tag" id="playerNameTag"></span>
+      <span class="score-badge" id="scoreBadge">Score: 0</span>
+    </div>
+    <div class="question-text" id="questionText"></div>
+    <div class="answers" id="answersGrid"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Next Question →</button>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="result-screen" id="resultScreen">
+    <div class="result-emoji" id="resultEmoji"></div>
+    <h2>Quiz Complete!</h2>
+    <div class="result-player-name" id="resultPlayerName"></div>
+    <div class="score-display" id="finalScore"></div>
+    <div class="result-percent" id="finalPercent"></div>
+    <p>out of 10 questions correct</p>
+    <div class="result-message" id="resultMessage"></div>
+    <div class="discord-status sending" id="discordStatus">⏳ Sending results to Discord...</div>
+    <button class="restart-btn" onclick="restartQuiz()">🔄 Play Again</button>
+  </div>
+
+</div>
+
+<script>
+  // ── CONFIG ──────────────────────────────────────────────────────────────────
+  const WEBHOOK_URL = 'https://discord.com/api/webhooks/1476865841395007540/gRnwY9OVQz_SwxG6tYr2N_hCuQxnzeAbSlMQRn2ZMfHKZCBeFgFuk9NKH2TluPaYRWBe';
+  const QUESTIONS_PER_GAME = 10;
+
+  // ── QUESTION BANK (70 questions) ─────────────────────────────────────────
+  const allQuestions = [
+    // ── BATCH 1 (original 35) ────────────────────────────────────────────────
+    {
+      question: "What does SNCF stand for?",
+      answers: ["Société Nationale des Chemins de fer Français","Syndicat National des Conducteurs Ferroviaires","Système National de Circulation Ferroviaire","Société Nouvelle des Chemins Fédéraux"],
+      correct: 0
+    },
+    {
+      question: "In what year was SNCF founded?",
+      answers: ["1920","1938","1945","1952"],
+      correct: 1
+    },
+    {
+      question: "What does TGV stand for in French?",
+      answers: ["Train à Grande Vitesse","Transport Général Voyageurs","Train de Gare Véloce","Turbine à Grande Voie"],
+      correct: 0
+    },
+    {
+      question: "In what year did the first commercial TGV service launch?",
+      answers: ["1976","1981","1987","1994"],
+      correct: 1
+    },
+    {
+      question: "What world speed record did a modified TGV set on April 3, 2007?",
+      answers: ["509.6 km/h","533.2 km/h","574.8 km/h","601.3 km/h"],
+      correct: 2
+    },
+    {
+      question: "Which Paris station is the main departure for TGVs to Lyon and the south of France?",
+      answers: ["Gare du Nord","Gare de l'Est","Gare Montparnasse","Gare de Lyon"],
+      correct: 3
+    },
+    {
+      question: "What high-speed service connects Paris to London via the Channel Tunnel?",
+      answers: ["Thalys","Eurostar","Lyria","Ouigo"],
+      correct: 1
+    },
+    {
+      question: "What is OUIGO?",
+      answers: ["A luxury first-class TGV brand","SNCF's low-cost high-speed rail service","A freight transport subsidiary of SNCF","A regional bus service operated by SNCF"],
+      correct: 1
+    },
+    {
+      question: "Approximately how many kilometers of railway does SNCF operate in France?",
+      answers: ["12,000 km","20,000 km","30,000 km","45,000 km"],
+      correct: 2
+    },
+    {
+      question: "Which was the first high-speed line to open in France, in 1981?",
+      answers: ["Paris – Bordeaux","Paris – Strasbourg","Paris – Lyon (LGV Sud-Est)","Paris – Marseille"],
+      correct: 2
+    },
+    {
+      question: "What does TER stand for?",
+      answers: ["Train Express Rapide","Transport Express Régional","Trafic Estival Régulier","Train Électrique Régional"],
+      correct: 1
+    },
+    {
+      question: "Which Paris station serves trains to London, Brussels, and Amsterdam?",
+      answers: ["Gare de Lyon","Gare Montparnasse","Gare du Nord","Gare Saint-Lazare"],
+      correct: 2
+    },
+    {
+      question: "What does LGV stand for in French?",
+      answers: ["Ligne Grande Voie","Ligne à Grande Vitesse","Lancement de Grande Vitesse","Liaison Grande Voiture"],
+      correct: 1
+    },
+    {
+      question: "Which Paris station mainly serves trains to Brittany and western France?",
+      answers: ["Gare de Lyon","Gare Montparnasse","Gare du Nord","Gare de l'Est"],
+      correct: 1
+    },
+    {
+      question: "What is Lyria?",
+      answers: ["A SNCF domestic budget brand","A high-speed rail service between France and Switzerland","A night train brand","A SNCF freight service"],
+      correct: 1
+    },
+    {
+      question: "In what year did the Channel Tunnel open to passenger trains?",
+      answers: ["1990","1992","1994","1996"],
+      correct: 2
+    },
+    {
+      question: "What does RER stand for?",
+      answers: ["Réseau Express Régional","Rail Express Rapide","Réseau Électrique Régulier","Route Express Régionale"],
+      correct: 0
+    },
+    {
+      question: "What is the TGV Duplex particularly known for?",
+      answers: ["Being the fastest train in the world","Being a double-decker high-speed train","Running on hydrogen fuel","Operating between France and Spain"],
+      correct: 1
+    },
+    {
+      question: "Which Paris station serves trains to Alsace, Germany, and Eastern Europe?",
+      answers: ["Gare du Nord","Gare de Lyon","Gare de l'Est","Gare Saint-Lazare"],
+      correct: 2
+    },
+    {
+      question: "What is the maximum commercial operating speed of modern TGVs?",
+      answers: ["270 km/h","300 km/h","320 km/h","350 km/h"],
+      correct: 2
+    },
+    {
+      question: "What was Thalys?",
+      answers: ["A SNCF domestic budget train","A high-speed service linking Paris, Brussels, Amsterdam and Cologne","A SNCF night train service","A regional train brand in northern France"],
+      correct: 1
+    },
+    {
+      question: "What is the name of SNCF's main ticket booking app?",
+      answers: ["SNCF Go","Rail France","SNCF Connect","TGV Direct"],
+      correct: 2
+    },
+    {
+      question: "In what year did SNCF officially become a public limited company (société anonyme)?",
+      answers: ["2015","2018","2020","2022"],
+      correct: 2
+    },
+    {
+      question: "Which of these is a night train service operated by SNCF?",
+      answers: ["Ouigo Night","Intercités de Nuit","TGV Nuit","Euronight France"],
+      correct: 1
+    },
+    {
+      question: "Which Paris station mainly serves trains to Normandy?",
+      answers: ["Gare du Nord","Gare de Lyon","Gare Saint-Lazare","Gare Montparnasse"],
+      correct: 2
+    },
+    {
+      question: "What does 'Intercités' refer to in SNCF's network?",
+      answers: ["High-speed TGV trains","Long-distance conventional trains between major cities","Suburban commuter trains","International trains only"],
+      correct: 1
+    },
+    {
+      question: "In what year did the LGV Est (Paris–Strasbourg) open?",
+      answers: ["2001","2004","2007","2010"],
+      correct: 2
+    },
+    {
+      question: "What is the name of SNCF's freight division?",
+      answers: ["SNCF Cargo","Fret SNCF","Rail Fret France","SNCF Logistics"],
+      correct: 1
+    },
+    {
+      question: "How many major mainline railway stations does Paris have?",
+      answers: ["4","5","6","7"],
+      correct: 2
+    },
+    {
+      question: "In what year did SNCF launch OUIGO, its low-cost high-speed service?",
+      answers: ["2009","2013","2016","2019"],
+      correct: 1
+    },
+    {
+      question: "What were 'Voitures Corail', introduced by SNCF in 1975?",
+      answers: ["A type of comfortable intercity passenger carriage","A class of electric locomotive","A type of double-decker commuter train","A high-speed train prototype"],
+      correct: 0
+    },
+    {
+      question: "Which country does the TGV Lyria service connect France to?",
+      answers: ["Belgium","Germany","Switzerland","Italy"],
+      correct: 2
+    },
+    {
+      question: "What was the PLM, one of SNCF's predecessor companies?",
+      answers: ["Paris-Lyon-Méditerranée railway","Paris-Lorraine-Marseille railway","Pays-Loir-Marne railway","Paris-Loire-Midi railway"],
+      correct: 0
+    },
+    {
+      question: "In what year did the LGV Méditerranée (Lyon to Marseille) fully open?",
+      answers: ["1998","2001","2005","2009"],
+      correct: 1
+    },
+    {
+      question: "What is the name of the high-speed line connecting Paris to Tours and Le Mans?",
+      answers: ["LGV Atlantique","LGV Ouest","LGV Bretagne","LGV Loire"],
+      correct: 0
+    },
+
+    // ── BATCH 2 (new 35) ─────────────────────────────────────────────────────
+    {
+      question: "Which company manufactures TGV trains?",
+      answers: ["Bombardier","Alstom","Siemens","CAF"],
+      correct: 1
+    },
+    {
+      question: "What is the brand name SNCF uses for its full-service TGV (as opposed to the budget Ouigo)?",
+      answers: ["TGV Classic","TGV Business","TGV InOui","TGV Premium"],
+      correct: 2
+    },
+    {
+      question: "In what year did France open its first steam-powered railway line (Lyon–Saint-Étienne)?",
+      answers: ["1820","1827","1832","1845"],
+      correct: 2
+    },
+    {
+      question: "Approximately how long does the fastest TGV journey from Paris to Lyon take?",
+      answers: ["1 hour","2 hours","3 hours","4 hours"],
+      correct: 1
+    },
+    {
+      question: "Which SNCF division manages France's national rail infrastructure — tracks, signals, and stations?",
+      answers: ["SNCF Voyageurs","SNCF Réseau","Eurostar Group","RATP"],
+      correct: 1
+    },
+    {
+      question: "In what year was Réseau Ferré de France (RFF) created to separate infrastructure management from train operations?",
+      answers: ["1990","1994","1997","2003"],
+      correct: 2
+    },
+    {
+      question: "On which high-speed line did the TGV set its 574.8 km/h world record in 2007?",
+      answers: ["LGV Sud-Est","LGV Atlantique","LGV Est","LGV Méditerranée"],
+      correct: 2
+    },
+    {
+      question: "Approximately how many passengers can a standard TGV Duplex carry?",
+      answers: ["280","380","508","650"],
+      correct: 2
+    },
+    {
+      question: "What was iDTGV?",
+      answers: ["A luxury SNCF train service","SNCF's low-cost online TGV booking brand","A cross-border TGV service","A train maintenance subsidiary"],
+      correct: 1
+    },
+    {
+      question: "What is the name of the TGV station serving Disneyland Paris?",
+      answers: ["Chessy-Disney","Marne-la-Vallée – Chessy","Val-de-Marne TGV","Bussy-Saint-Georges"],
+      correct: 1
+    },
+    {
+      question: "Approximately how long does a TGV take to travel from Paris to Marseille?",
+      answers: ["2 hours","3 hours","4 hours","5 hours"],
+      correct: 1
+    },
+    {
+      question: "Which Paris station is considered the busiest railway station in Europe?",
+      answers: ["Gare de Lyon","Gare du Nord","Gare Saint-Lazare","Gare Montparnasse"],
+      correct: 1
+    },
+    {
+      question: "What electrical system do TGVs primarily use on high-speed lines?",
+      answers: ["750V DC third rail","1,500V DC overhead","25,000V AC overhead","15,000V AC overhead"],
+      correct: 2
+    },
+    {
+      question: "What is the name of SNCF's youth discount railcard?",
+      answers: ["Carte Jeune","Carte Avantage Jeune","Pass Jeune","Carte 18-27"],
+      correct: 1
+    },
+    {
+      question: "Approximately how long does the Eurostar journey from Paris to London take?",
+      answers: ["1 hour 30 minutes","2 hours 15 minutes","3 hours","3 hours 45 minutes"],
+      correct: 1
+    },
+    {
+      question: "What is the Fréjus Rail Tunnel?",
+      answers: ["A tunnel under the English Channel","A tunnel connecting France and Spain","A rail tunnel connecting France and Italy through the Alps","A Paris metro tunnel"],
+      correct: 2
+    },
+    {
+      question: "What is the French word for a train platform?",
+      answers: ["Gare","Voie","Quai","Rail"],
+      correct: 2
+    },
+    {
+      question: "How long does the fastest Paris to Bordeaux TGV take since the new line opened in 2017?",
+      answers: ["1 hour 30 minutes","2 hours 5 minutes","3 hours","3 hours 40 minutes"],
+      correct: 1
+    },
+    {
+      question: "In what year did the LGV Sud-Europe-Atlantique (Tours–Bordeaux) open, dramatically cutting Paris–Bordeaux travel time?",
+      answers: ["2010","2014","2017","2021"],
+      correct: 2
+    },
+    {
+      question: "What does 'composté' mean for a French train ticket?",
+      answers: ["The ticket has been upgraded","The ticket has been validated before boarding","The ticket has been cancelled","The ticket has been checked by a conductor"],
+      correct: 1
+    },
+    {
+      question: "What is a 'cheminot' in French?",
+      answers: ["Specifically a train driver","A railway worker or employee","A station manager","A ticket inspector"],
+      correct: 1
+    },
+    {
+      question: "Approximately how many people does SNCF employ?",
+      answers: ["50,000","100,000","150,000","300,000"],
+      correct: 2
+    },
+    {
+      question: "What is the official French name for the Channel Tunnel?",
+      answers: ["Tunnel Franco-Britannique","Tunnel sous la Manche","Le Grand Tunnel","Eurotunnel"],
+      correct: 1
+    },
+    {
+      question: "How many platforms does Paris Gare du Nord have, making it the largest railway terminus in Europe?",
+      answers: ["24","30","36","44"],
+      correct: 3
+    },
+    {
+      question: "What does 'grandes lignes' refer to in French rail terminology?",
+      answers: ["Only high-speed TGV services","Long-distance intercity rail services","International cross-border routes","Commuter rail lines around Paris"],
+      correct: 1
+    },
+    {
+      question: "In what year was the first TGV prototype (TGV 001) tested on French tracks?",
+      answers: ["1969","1974","1978","1981"],
+      correct: 1
+    },
+    {
+      question: "What is the primary color of the SNCF corporate logo?",
+      answers: ["Blue","Green","Red","Orange"],
+      correct: 2
+    },
+    {
+      question: "What does the French phrase 'train en retard' mean?",
+      answers: ["Train on time","Train delayed","Train cancelled","Train at full capacity"],
+      correct: 1
+    },
+    {
+      question: "What was the maximum commercial speed on the LGV Atlantique when it opened, making it the world's fastest passenger rail line at the time?",
+      answers: ["270 km/h","300 km/h","320 km/h","350 km/h"],
+      correct: 1
+    },
+    {
+      question: "What is the approximate TGV journey time from Paris to Strasbourg since the LGV Est opened in 2007?",
+      answers: ["1 hour","1 hour 47 minutes","2 hours 30 minutes","3 hours"],
+      correct: 1
+    },
+    {
+      question: "What is the name of the new generation TGV ordered by SNCF in 2018, also known as Avelia Horizon?",
+      answers: ["TGV Next","TGV Alpha","TGV M","TGV Neo"],
+      correct: 2
+    },
+    {
+      question: "Which Paris station mainly serves trains to southwestern France (Limoges, Toulouse, Clermont-Ferrand)?",
+      answers: ["Gare du Nord","Gare de l'Est","Gare d'Austerlitz","Gare Saint-Lazare"],
+      correct: 2
+    },
+    {
+      question: "What was the 'Carte Orange'?",
+      answers: ["A first-class intercity rail pass","A historic weekly/monthly travel pass for the Paris public transport network","A senior discount card for SNCF","A weekend TGV discount pass"],
+      correct: 1
+    },
+    {
+      question: "Which RER line connects Paris to Charles de Gaulle Airport?",
+      answers: ["RER A","RER B","RER C","RER D"],
+      correct: 1
+    },
+    {
+      question: "Which high-speed line connects Paris to Lille?",
+      answers: ["LGV Nord","LGV Atlantique","LGV Est","LGV Picardie"],
+      correct: 0
+    }
+  ];
+
+  // ── SHUFFLE ──────────────────────────────────────────────────────────────────
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // ── STATE ────────────────────────────────────────────────────────────────────
+  let questions = [];
+  let currentQuestion = 0;
+  let score = 0;
+  let answered = false;
+  let playerName = '';
+
+  // ── START ────────────────────────────────────────────────────────────────────
+  function startQuiz() {
+    const input = document.getElementById('playerName').value.trim();
+    if (!input) {
+      document.getElementById('nameError').style.display = 'block';
+      document.getElementById('playerName').focus();
+      return;
+    }
+    document.getElementById('nameError').style.display = 'none';
+    playerName = input;
+
+    // Pick 10 random questions from the bank
+    questions = shuffle(allQuestions).slice(0, QUESTIONS_PER_GAME);
+
+    document.getElementById('startScreen').style.display = 'none';
+    document.getElementById('quizBody').style.display = 'block';
+    document.getElementById('playerNameTag').textContent = '👤 ' + playerName;
+    showQuestion();
+  }
+
+  // ── SHOW QUESTION ────────────────────────────────────────────────────────────
+  function showQuestion() {
+    answered = false;
+    const q = questions[currentQuestion];
+
+    // Shuffle the answers and track where the correct one ended up
+    const correctText = q.answers[q.correct];
+    const shuffledAnswers = shuffle(q.answers);
+    q._display = { answers: shuffledAnswers, correct: shuffledAnswers.indexOf(correctText) };
+
+    document.getElementById('questionNumber').textContent = `Question ${currentQuestion + 1} / ${questions.length}`;
+    document.getElementById('scoreBadge').textContent = `Score: ${score}`;
+    document.getElementById('questionText').textContent = q.question;
+    document.getElementById('feedback').className = 'feedback';
+    document.getElementById('feedback').textContent = '';
+    document.getElementById('nextBtn').style.display = 'none';
+
+    const progress = (currentQuestion / questions.length) * 100;
+    document.getElementById('progressBar').style.width = progress + '%';
+
+    const grid = document.getElementById('answersGrid');
+    grid.innerHTML = '';
+    q._display.answers.forEach((ans, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = ans;
+      btn.onclick = () => selectAnswer(i);
+      grid.appendChild(btn);
+    });
+  }
+
+  // ── SELECT ANSWER ────────────────────────────────────────────────────────────
+  function selectAnswer(index) {
+    if (answered) return;
+    answered = true;
+
+    const q = questions[currentQuestion];
+    const { answers: displayAnswers, correct: correctIndex } = q._display;
+    const buttons = document.querySelectorAll('.answer-btn');
+    const feedback = document.getElementById('feedback');
+
+    buttons.forEach(btn => btn.disabled = true);
+
+    if (index === correctIndex) {
+      buttons[index].classList.add('correct');
+      feedback.textContent = '✅ Correct! Well done!';
+      feedback.className = 'feedback correct';
+      score++;
+    } else {
+      buttons[index].classList.add('wrong');
+      buttons[correctIndex].classList.add('correct');
+      feedback.textContent = `❌ Wrong! The correct answer was: "${displayAnswers[correctIndex]}"`;
+      feedback.className = 'feedback wrong';
+    }
+
+    document.getElementById('scoreBadge').textContent = `Score: ${score}`;
+
+    const nextBtn = document.getElementById('nextBtn');
+    nextBtn.style.display = 'block';
+    nextBtn.textContent = currentQuestion < questions.length - 1 ? 'Next Question →' : 'See Results 🏁';
+  }
+
+  // ── NEXT QUESTION ────────────────────────────────────────────────────────────
+  function nextQuestion() {
+    currentQuestion++;
+    if (currentQuestion < questions.length) {
+      showQuestion();
+    } else {
+      showResults();
+    }
+  }
+
+  // ── SHOW RESULTS ─────────────────────────────────────────────────────────────
+  function showResults() {
+    document.getElementById('quizBody').style.display = 'none';
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('resultScreen').style.display = 'block';
+
+    const percent = Math.round((score / questions.length) * 100);
+
+    document.getElementById('finalScore').textContent = `${score} / ${questions.length}`;
+    document.getElementById('finalPercent').textContent = `${percent}%`;
+    document.getElementById('resultPlayerName').textContent = playerName;
+
+    let emoji, message;
+    if (score === questions.length) {
+      emoji = '🏆';
+      message = 'Perfect score! You\'re a true SNCF expert — have you considered working for them?';
+    } else if (score >= 8) {
+      emoji = '🥇';
+      message = 'Excellent! You know French railways very well. Bravo!';
+    } else if (score >= 6) {
+      emoji = '🥈';
+      message = 'Good job! You know your trains, but there\'s still room to improve.';
+    } else if (score >= 4) {
+      emoji = '🥉';
+      message = 'Not bad! Maybe take a few more TGV trips to brush up your knowledge.';
+    } else {
+      emoji = '🚂';
+      message = 'Looks like you missed your train this time! Try again and learn more about SNCF.';
+    }
+
+    document.getElementById('resultEmoji').textContent = emoji;
+    document.getElementById('resultMessage').textContent = message;
+
+    sendToDiscord(playerName, score, percent, emoji, message);
+  }
+
+  // ── SEND TO DISCORD ──────────────────────────────────────────────────────────
+  async function sendToDiscord(name, score, percent, emoji, message) {
+    const statusEl = document.getElementById('discordStatus');
+
+    let color;
+    if (score === questions.length) color = 0xF1C40F;
+    else if (score >= 8)           color = 0x27AE60;
+    else if (score >= 6)           color = 0x2ECC71;
+    else if (score >= 4)           color = 0xE67E22;
+    else                           color = 0xE74C3C;
+
+    const filled = Math.round(score);
+    const empty  = questions.length - filled;
+    const bar = '█'.repeat(filled) + '░'.repeat(empty);
+
+    const payload = {
+      embeds: [{
+        title: '🚄 SNCF Quiz — New Result!',
+        color: color,
+        fields: [
+          { name: '👤 Player',     value: `**${name}**`,                        inline: true },
+          { name: '🎯 Score',      value: `**${score} / ${questions.length}**`, inline: true },
+          { name: '📊 Percentage', value: `**${percent}%**`,                    inline: true },
+          { name: '📈 Progress',   value: `\`${bar}\` ${emoji}`,                inline: false },
+          { name: '💬 Verdict',    value: message,                               inline: false }
+        ],
+        footer: { text: 'SNCF Quiz' },
+        timestamp: new Date().toISOString()
+      }]
+    };
+
+    try {
+      const res = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        statusEl.textContent = '✅ Results posted to Discord!';
+        statusEl.className = 'discord-status success';
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+    } catch (err) {
+      statusEl.textContent = '❌ Could not reach Discord. Check your connection.';
+      statusEl.className = 'discord-status error';
+      console.error('Discord webhook error:', err);
+    }
+  }
+
+  // ── RESTART ──────────────────────────────────────────────────────────────────
+  function restartQuiz() {
+    currentQuestion = 0;
+    score = 0;
+    playerName = '';
+    questions = [];
+    document.getElementById('playerName').value = '';
+    document.getElementById('resultScreen').style.display = 'none';
+    document.getElementById('startScreen').style.display = 'block';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('discordStatus').textContent = '⏳ Sending results to Discord...';
+    document.getElementById('discordStatus').className = 'discord-status sending';
+  }
+</script>
+
+</body>
+</html>
